@@ -1,0 +1,6 @@
+#include "promisedio/base.h"
+#include "promisedio/atomic.h"
+#include "promisedio/capsule.h"
+#include "promisedio/chain.h"
+#include "promisedio/memory.h"
+#include "promisedio/module.h"
