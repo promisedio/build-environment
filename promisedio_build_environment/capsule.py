@@ -1,6 +1,7 @@
 import os
 import re
 import sys
+import json
 import hashlib
 import argparse
 
@@ -15,12 +16,18 @@ def main(params):
     modules = [name for name in os.listdir(args.root) if os.path.isdir(os.path.join(args.root, name))]
     for module in modules:
         module_path = os.path.join(args.root, module)
-        files = [
-            name
-            for name in os.listdir(module_path)
-            if name.endswith(".c") and os.path.isfile(os.path.join(module_path, name))
-        ]
-        generate_auto_files(args.root, module, files)
+        capsule_config_file = os.path.join(module_path, "capsule.json")
+        if os.path.exists(capsule_config_file):
+            config = json.loads(open("capsule_config_file", "rt").read())
+        else:
+            config = {}
+        if not config.get("sources"):
+            config["sources"] = [
+                name
+                for name in os.listdir(module_path)
+                if name.endswith(".c") and os.path.isfile(os.path.join(module_path, name))
+            ]
+        generate_auto_files(module_path, module, config)
 
 
 def error(msg, key, decl):
@@ -52,10 +59,10 @@ def parse_c_file(data):
     return result
 
 
-def generate_auto_files(root, module, files):
+def generate_auto_files(module_path, module, config):
     functions = {}
-    for file in files:
-        with open(os.path.join(root, module, file), "rt") as f:
+    for source in config["sources"]:
+        with open(os.path.join(module_path, source), "rt") as f:
             data = f.read()
         result = parse_c_file(data)
         if result:
@@ -69,8 +76,20 @@ def generate_auto_files(root, module, files):
     for api_key, funcs in functions.items():
         hash_keys[api_key] = hashlib.md5(repr(funcs).encode("utf-8")).hexdigest()
 
-    with open(os.path.join(root, module, "capsule.h"), "wt") as f1:
-        with open(os.path.join(root, module, "export.h"), "wt") as f2:
+    output_file = config.get("output")
+    if not output_file:
+        output_file = f"capsule/{module}.h"
+    output_file = os.path.join(module_path, output_file)
+    export_file = config.get("export")
+    if not export_file:
+        export_file = "export.h"
+    if not os.path.exists(os.path.dirname(output_file)):
+        os.makedirs(os.path.dirname(output_file), exist_ok=True)
+    if not os.path.exists(os.path.dirname(export_file)):
+        os.makedirs(os.path.dirname(export_file), exist_ok=True)
+
+    with open(output_file, "wt") as f1:
+        with open(export_file, "wt") as f2:
             f1.write(code_header)
             f1.write(f"#ifndef PROMISEDIO_{module.upper()}_API\n")
             f1.write(f"#define PROMISEDIO_{module.upper()}_API\n\n")
@@ -110,9 +129,11 @@ def generate_auto_files(root, module, files):
                     f1.write(f"  (({ret} (*) ({args}))({hash_key}__api[{func_id}]))( \\\n")
                     f1.write(f"    {varargs})\n\n")
                 f2.write("}\n\n")
-            if os.path.exists(os.path.join(root, module, f"{module}.capsule.h")):
-                f1.write(open(os.path.join(root, module, f"{module}.capsule.h"), "rt").read() + "\n")
-                # f1.write(f'#include "{module}/{module}_capsule.h"\n\n')
+
+            if config.get("extend"):
+                for item in config["extend"]:
+                    f1.write(open(os.path.join(module_path, item), "rt").read() + "\n")
+
             f1.write("#endif\n")
 
 
