@@ -23,8 +23,6 @@ def get_readme():
         n += 1
         if line.startswith("### "):
             module = line.split()[1]
-            if module.startswith("promisedio."):
-                module = module[11:]
             func = None
             continue
         if module:
@@ -48,6 +46,8 @@ def get_readme_description(func):
     result = func.docstring.rstrip("\n") + "\n\n"
     module = func.module.name
     name = f"{func.cls.name}.{func.name}" if func.cls else func.name
+    if name.endswith(".__new__"):
+        name = name[:-8]
     lines = get_readme().get(module, {}).get(name)
     if not lines:
         print("No docstring for %s.%s" % (module, name))
