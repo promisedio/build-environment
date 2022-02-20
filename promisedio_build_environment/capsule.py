@@ -18,7 +18,7 @@ def main(params):
         module_path = os.path.join(args.root, module)
         capsule_config_file = os.path.join(module_path, "capsule.json")
         if os.path.exists(capsule_config_file):
-            config = json.loads(open("capsule_config_file", "rt").read())
+            config = json.loads(open(capsule_config_file, "rt").read())
         else:
             config = {}
         if not config.get("sources"):
@@ -83,16 +83,20 @@ def generate_auto_files(module_path, module, config):
     export_file = config.get("export")
     if not export_file:
         export_file = "export.h"
-    if not os.path.exists(os.path.dirname(output_file)):
+    if os.path.dirname(output_file):
         os.makedirs(os.path.dirname(output_file), exist_ok=True)
-    if not os.path.exists(os.path.dirname(export_file)):
+    if os.path.dirname(export_file):
         os.makedirs(os.path.dirname(export_file), exist_ok=True)
 
     with open(output_file, "wt") as f1:
         with open(export_file, "wt") as f2:
             f1.write(code_header)
-            f1.write(f"#ifndef PROMISEDIO_{module.upper()}_API\n")
-            f1.write(f"#define PROMISEDIO_{module.upper()}_API\n\n")
+            f1.write(f"#ifndef CAPSULE_{module.upper()}_API\n")
+            f1.write(f"#define CAPSULE_{module.upper()}_API\n\n")
+            if config.get("include"):
+                for item in config["include"]:
+                    f1.write(f'#include "{item}"\n')
+                f1.write("\n")
             f2.write(code_header)
             for api_key, funcs in functions.items():
                 hash_key = api_key + "_" + hash_keys[api_key]
