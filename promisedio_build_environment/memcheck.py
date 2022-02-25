@@ -11,7 +11,7 @@ class Ref:
         return f"{self.type}({self.refcnt})"
 
 
-def run():
+def main():
     refs = {}
     allocs = []
 
@@ -114,3 +114,7 @@ def run():
                 print_header("")
 
     print_leaks()
+
+
+if __name__ == "__main__":
+    main()

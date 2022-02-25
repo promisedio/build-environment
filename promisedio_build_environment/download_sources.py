@@ -110,7 +110,7 @@ def get_source_code(version, path, target, c_names=None, exclude_c_names=None,
         f.write(code.decode("utf-8"))
 
 
-def run():
+def main():
     items = json.loads(open("sources.json", "rt").read())
     for item in items:
         for version in sorted(item.pop("version")):
@@ -118,4 +118,4 @@ def run():
 
 
 if __name__ == "__main__":
-    run()
+    main()

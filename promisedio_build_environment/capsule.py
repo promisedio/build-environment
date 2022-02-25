@@ -9,10 +9,10 @@ import argparse
 code_header = "// Auto-generated\n\n"
 
 
-def main(params):
+def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("root")
-    args = parser.parse_args(params)
+    args = parser.parse_args()
     modules = [name for name in os.listdir(args.root) if os.path.isdir(os.path.join(args.root, name))]
     for module in modules:
         module_path = os.path.join(args.root, module)
@@ -83,6 +83,7 @@ def generate_auto_files(module_path, module, config):
     export_file = config.get("export")
     if not export_file:
         export_file = "export.h"
+    export_file = os.path.join(module_path, export_file)
     if os.path.dirname(output_file):
         os.makedirs(os.path.dirname(output_file), exist_ok=True)
     if os.path.dirname(export_file):
@@ -142,4 +143,4 @@ def generate_auto_files(module_path, module, config):
 
 
 if __name__ == "__main__":
-    main(sys.argv[1:])
+    main()
