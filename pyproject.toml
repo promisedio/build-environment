@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "promisedio-build-environment"
-version = "1.0.14"
+version = "1.0.15"
 description = "Promisedio build environment"
 authors = ["aachurin <aachurin@gmail.com>"]
 license = "MIT License"
@@ -11,7 +11,7 @@ python = "^3.10"
 requests = "^2.27.1"
 
 [tool.poetry.scripts]
-download_sources = "promisedio_build_environment.download_sources:run"
+download_sources = "promisedio_build_environment.download_sources:main"
 capsule = "promisedio_build_environment.capsule:main"
 clinic = "promisedio_build_environment.clinic:main"
 memcheck = "promisedio_build_environment.memcheck:main"
