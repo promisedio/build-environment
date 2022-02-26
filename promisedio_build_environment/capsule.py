@@ -1,68 +1,63 @@
 import os
 import re
-import sys
 import json
 import hashlib
-import argparse
 
 
 code_header = "// Auto-generated\n\n"
 
 
 def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("root")
-    args = parser.parse_args()
-    modules = [name for name in os.listdir(args.root) if os.path.isdir(os.path.join(args.root, name))]
-    for module in modules:
-        module_path = os.path.join(args.root, module)
-        capsule_config_file = os.path.join(module_path, "capsule.json")
-        if os.path.exists(capsule_config_file):
-            config = json.loads(open(capsule_config_file, "rt").read())
-        else:
-            config = {}
-        if not config.get("sources"):
-            config["sources"] = [
-                name
-                for name in os.listdir(module_path)
-                if name.endswith(".c") and os.path.isfile(os.path.join(module_path, name))
-            ]
-        generate_auto_files(module_path, module, config)
+    capsules = json.loads(open("capsules.json", "rt").read())
+    include = format_list(capsules.get("include"))
+    for path, params in capsules["modules"].items():
+        module_include = include + format_list(params.pop("include", None))
+        generate_capsule(path, include=module_include, **params)
 
 
-def error(msg, key, decl):
-    print(key)
-    print(decl)
-    raise ValueError(msg)
+def format_list(value, mapping=None):
+    if not value:
+        return []
+    if not isinstance(value, list):
+        value = [value]
+    return [str(x).format_map(mapping or {}) for x in value]
 
 
-def parse_c_file(data):
-    result = {}
-    functions = re.findall(r"CAPSULE_API\((.*),\s*(.*)\)([^{;]*)", data)
-    for key, ret, decl in functions:
-        key = key.strip()
-        if not re.match(r"^[a-zA-Z_][a-zA-Z0-9_]+$", key):
-            error(key, decl, "Invalid key")
-        ret = ret.strip()
-        decl = decl.strip()
-        match = re.match(r"(.*)\(([\s\S]*)\)", decl)
-        if not match:
-            error(key, decl, "Invalid declaration")
-        funcname, funcargs = match.groups()
-        funcname = funcname.strip()
-        funcargs = [x.strip() for x in funcargs.strip().split(",")]
-        result.setdefault(key.lower(), []).append({
-            "name": funcname,
-            "ret": ret,
-            "args": funcargs
-        })
-    return result
+def generate_capsule(
+        path,
+        include=None,
+        output="capsule/{module}.h",
+        export="{module}_export.h",
+        sources="{module}.c",
+        extend=None
+):
+    print(path)
+    module = os.path.split(path)[1]
+    if not os.path.exists(path) or not os.path.isdir(path):
+        raise FileNotFoundError(path)
+    mapping = {
+        "module": module,
+        "path": path
+    }
+    output = format_list(output, mapping)
+    if not output:
+        raise ValueError("`output` must be specified")
+    output = os.path.join(path, output[0])
 
+    export = format_list(export, mapping)
+    if not export:
+        raise ValueError("`export` must be specified")
+    export = os.path.join(path, export[0])
 
-def generate_auto_files(module_path, module, config):
+    sources = format_list(sources, mapping)
+    if not sources:
+        raise ValueError("`sources` must be specified")
+
+    extend = format_list(extend, mapping)
+
     functions = {}
-    for source in config["sources"]:
-        with open(os.path.join(module_path, source), "rt") as f:
+    for source in sources:
+        with open(os.path.join(path, source), "rt") as f:
             data = f.read()
         result = parse_c_file(data)
         if result:
@@ -76,26 +71,18 @@ def generate_auto_files(module_path, module, config):
     for api_key, funcs in functions.items():
         hash_keys[api_key] = hashlib.md5(repr(funcs).encode("utf-8")).hexdigest()
 
-    output_file = config.get("output")
-    if not output_file:
-        output_file = f"capsule/{module}.h"
-    output_file = os.path.join(module_path, output_file)
-    export_file = config.get("export")
-    if not export_file:
-        export_file = "export.h"
-    export_file = os.path.join(module_path, export_file)
-    if os.path.dirname(output_file):
-        os.makedirs(os.path.dirname(output_file), exist_ok=True)
-    if os.path.dirname(export_file):
-        os.makedirs(os.path.dirname(export_file), exist_ok=True)
+    if os.path.dirname(output):
+        os.makedirs(os.path.dirname(output), exist_ok=True)
+    if os.path.dirname(export):
+        os.makedirs(os.path.dirname(export), exist_ok=True)
 
-    with open(output_file, "wt") as f1:
-        with open(export_file, "wt") as f2:
+    with open(output, "wt") as f1:
+        with open(export, "wt") as f2:
             f1.write(code_header)
             f1.write(f"#ifndef CAPSULE_{module.upper()}_API\n")
             f1.write(f"#define CAPSULE_{module.upper()}_API\n\n")
-            if config.get("include"):
-                for item in config["include"]:
+            if include:
+                for item in include:
                     f1.write(f'#include "{item}"\n')
                 f1.write("\n")
             f2.write(code_header)
@@ -135,11 +122,34 @@ def generate_auto_files(module_path, module, config):
                     f1.write(f"    {varargs})\n\n")
                 f2.write("}\n\n")
 
-            if config.get("extend"):
-                for item in config["extend"]:
-                    f1.write(open(os.path.join(module_path, item), "rt").read() + "\n")
+            if extend:
+                for item in extend:
+                    f1.write(open(os.path.join(path, item), "rt").read() + "\n")
 
             f1.write("#endif\n")
+
+
+def parse_c_file(data):
+    result = {}
+    functions = re.findall(r"CAPSULE_API\((.*),\s*(.*)\)([^{;]*)", data)
+    for key, ret, decl in functions:
+        key = key.strip()
+        if not re.match(r"^[a-zA-Z_][a-zA-Z0-9_]+$", key):
+            raise ValueError("Invalid key", key, decl)
+        ret = ret.strip()
+        decl = decl.strip()
+        match = re.match(r"(.*)\(([\s\S]*)\)", decl)
+        if not match:
+            raise ValueError("Invalid declaration", key, decl)
+        func_name, func_args = match.groups()
+        func_name = func_name.strip()
+        func_args = [x.strip() for x in func_args.strip().split(",")]
+        result.setdefault(key.lower(), []).append({
+            "name": func_name,
+            "ret": ret,
+            "args": func_args
+        })
+    return result
 
 
 if __name__ == "__main__":
