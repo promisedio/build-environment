@@ -39,7 +39,7 @@ Py_GC_New(PyTypeObject *tp)
 
 #else
 #define Py_Malloc(op) PyMem_Malloc(op)
-#define Py_Free(op) PyMem_Free(op)
+#define Py_Free PyMem_Free
 #define Py_New(op) _PyObject_New(op)
 #define Py_GC_New(op) _PyObject_GC_New(op)
 #endif
@@ -229,19 +229,19 @@ _ctx->name##__gc_freelist =             \
 Py_LOCAL_INLINE(void)
 Freelist_Mem_Clear(freelist_mem_head *fl)
 {
-    Freelist_CLEAR(fl, PyMem_Free)
+    Freelist_CLEAR(fl, Py_Free)
 }
 
 Py_LOCAL_INLINE(void)
 Freelist_Obj_Clear(freelist_obj_head *fl)
 {
-    Freelist_CLEAR(fl, PyMem_Free)
+    Freelist_CLEAR(fl, Py_Delete)
 }
 
 Py_LOCAL_INLINE(void)
 Freelist_GC_Clear(freelist_gc_head *fl)
 {
-    Freelist_CLEAR(fl, PyObject_GC_Del);
+    Freelist_CLEAR(fl, Py_GC_Delete)
 }
 
 #define Freelist_Mem_Clear(name) Freelist_Mem_Clear(&(_ctx->name##__mem_freelist))
