@@ -31,7 +31,7 @@ def generate_capsule(
         sources="{module}.c",
         extend=None
 ):
-    print(path)
+    print(f"{path}:")
     module = os.path.split(path)[1]
     if not os.path.exists(path) or not os.path.isdir(path):
         raise FileNotFoundError(path)
@@ -65,6 +65,7 @@ def generate_capsule(
                 functions.setdefault(key, []).extend(value)
 
     if not functions:
+        print("  empty")
         return
 
     hash_keys = {}
@@ -76,6 +77,8 @@ def generate_capsule(
     if os.path.dirname(export):
         os.makedirs(os.path.dirname(export), exist_ok=True)
 
+    print(f". {output}")
+    print(f". {export}")
     with open(output, "wt") as f1:
         with open(export, "wt") as f2:
             f1.write(code_header)

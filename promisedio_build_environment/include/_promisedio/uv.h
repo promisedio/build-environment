@@ -4,9 +4,9 @@
 #define PROMISEDIO_HANDLE_H
 
 #include <uv.h>
-#include "promisedio/base.h"
-#include "promisedio/memory.h"
-#include "promisedio/module.h"
+#include "base.h"
+#include "memory.h"
+#include "module.h"
 
 #define container_of(ptr, type) ((type *) ((char *) (ptr) - offsetof(type, base)))
 #define Handle_Get(ptr, type) ((type *)((ptr)->data))

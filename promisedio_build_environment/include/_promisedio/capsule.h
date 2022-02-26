@@ -3,8 +3,8 @@
 #ifndef PROMISEDIO_CAPSULE_H
 #define PROMISEDIO_CAPSULE_H
 
-#include "promisedio/base.h"
-#include STRINGIFY(promisedio/PY_MAJOR_VERSION.PY_MINOR_VERSION.PY_MICRO_VERSION/capsule.h)
+#include "base.h"
+#include STRINGIFY(PY_MAJOR_VERSION.PY_MINOR_VERSION.PY_MICRO_VERSION/capsule.h)
 
 Py_LOCAL_INLINE(void *)
 Capsule_Load(PyObject *module, const char *api_id)

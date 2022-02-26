@@ -3,7 +3,7 @@
 #ifndef PROMISEDIO_ATOMIC_H
 #define PROMISEDIO_ATOMIC_H
 
-#include "promisedio/base.h"
+#include "base.h"
 #include "internal/pycore_atomic.h"
 
 // currently, only stdlib

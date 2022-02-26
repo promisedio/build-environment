@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "promisedio-build-environment"
-version = "1.0.16"
+version = "1.0.19"
 description = "Promisedio build environment"
 authors = ["aachurin <aachurin@gmail.com>"]
 license = "MIT License"
