@@ -28,7 +28,7 @@ _CTX__gettype(PyTypeObject *obj)
 #define _CTX_set_type(type) _ctx_var = _CTX_get_type(type)
 #define _CTX_get(ptr) ((_modulestate *)((ptr)->_ctx))
 #define _CTX_set(ptr) _ctx_var = _CTX_get(ptr)
-#define _CTX_save(ptr) (ptr)->_ctx = _ctx;
+#define _CTX_save(ptr) (ptr)->_ctx = _ctx
 #define S(some) _ctx->some
 
 #endif
