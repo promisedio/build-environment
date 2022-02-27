@@ -272,7 +272,7 @@ Freelist_Malloc(freelist_mem_head *fl)
 {
     void *ptr = freelist__pop(fl);
     if (!ptr) {
-        ptr = PyMem_Malloc(fl->obj_size);
+        ptr = Py_Malloc(fl->obj_size);
     }
     return ptr;
 }
