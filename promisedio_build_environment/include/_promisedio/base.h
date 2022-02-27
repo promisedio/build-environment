@@ -5,17 +5,18 @@
 
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
+#include <string.h>
 
 #ifdef BUILD_DEBUG_LOG
-#define LOG(...)                                                        \
-PySys_FormatStderr("%s:%d, %s -- ", __FILE__, __LINE__, __func__),      \
-PySys_FormatStderr(__VA_ARGS__),                                        \
+#define LOG(...)                                                            \
+PySys_FormatStderr("%s:%d, %s -- ", __FILENAME__, __LINE__, __func__),      \
+PySys_FormatStderr(__VA_ARGS__),                                            \
 PySys_WriteStderr("\n")
-#define LOGС(cond, ...)                                                 \
-if (cond) {                                                             \
-    PySys_FormatStderr("%s:%d, %s -- ", __FILE__, __LINE__, __func__),  \
-    PySys_FormatStderr(__VA_ARGS__),                                    \
-    PySys_WriteStderr("\n");                                            \
+#define LOGС(cond, ...)                                                     \
+if (cond) {                                                                 \
+    PySys_FormatStderr("%s:%d, %s -- ", __FILENAME__, __LINE__, __func__),  \
+    PySys_FormatStderr(__VA_ARGS__),                                        \
+    PySys_WriteStderr("\n");                                                \
 }
 #else
 #define LOG(...)
@@ -23,9 +24,9 @@ if (cond) {                                                             \
 #endif
 
 #ifdef BUILD_DEBUG_MEM
-#define MEMLOG(action, ptr, type)                                       \
-    PySys_FormatStderr("#%s\t(%p, %s)", action, ptr, type),             \
-    PySys_FormatStderr(" -- %s:%d, %s", __FILE__, __LINE__, __func__),  \
+#define MEMLOG(action, ptr, type)                                           \
+    PySys_FormatStderr("#%s\t(%p, %s)", action, ptr, type),                 \
+    PySys_FormatStderr(" -- %s:%d, %s", __FILENAME__, __LINE__, __func__),  \
     PySys_WriteStderr("\n")
 #else
 #define MEMLOG(...)
@@ -37,6 +38,7 @@ if (cond) {                                                             \
     PyGILState_Release(_gstate); }
 
 #ifdef MS_WINDOWS
+#define __FILENAME__ (strrchr(__FILE__, '\\') ? strrchr(__FILE__, '\\') + 1 : __FILE__)
 /* Windows uses long long for offsets */
 typedef long long Py_off_t;
 #define PyLong_AsOff_t     PyLong_AsLongLong
@@ -47,6 +49,8 @@ typedef long long Py_off_t;
 #define PY_PRIdOFF         "lld"
 #define PyLong_FromUint64_t PyLong_FromUnsignedLongLong
 #else
+
+#define __FILENAME__ (strrchr(__FILE__, '/') ? strrchr(__FILE__, '/') + 1 : __FILE__)
 /* Other platforms use off_t */
 typedef off_t Py_off_t;
 #if (SIZEOF_OFF_T == SIZEOF_SIZE_T)
