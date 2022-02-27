@@ -3,8 +3,10 @@
 #ifndef PROMISEDIO_CAPSULE_H
 #define PROMISEDIO_CAPSULE_H
 
-#include "base.h"
-#include STRINGIFY(PY_MAJOR_VERSION.PY_MINOR_VERSION.PY_MICRO_VERSION/capsule.h)
+#include "_promisedio/base.h"
+#include "_promisedio/memory.h"
+#include "_promisedio/module.h"
+
 
 Py_LOCAL_INLINE(void *)
 Capsule_Load(PyObject *module, const char *api_id)
@@ -17,46 +19,48 @@ Capsule_Load(PyObject *module, const char *api_id)
     if (!object) {
         return NULL;
     }
-    void *return_value = NULL;
-    if (PyCapsule_IsValid(object, api_id)) {
-        return_value = ((PyCapsule *) object)->pointer;
-    } else {
-        PyErr_Format(PyExc_AttributeError, "capsule \"%s\" is not valid", api_id);
+    if (PyCapsule_GetContext(object) != _CTX__getmodule(module)) {
+        PyErr_Format(PyExc_ImportError, "capsule \"%s\" is not valid", api_id);
+        Py_DECREF(object);
+        return NULL;
     }
+    void *return_value = PyCapsule_GetPointer(object, api_id);
     Py_DECREF(object);
     return return_value;
 }
 
-#define Capsule_CREATE(module, api_id)                                                                                                     \
-    do {                                                                                                                                   \
-        static void *c_api[] = api_id##_CAPSULE;                                                                                           \
-        PyObject *_api = PyCapsule_New(&(c_api), STRINGIFY(api_id), NULL);                                                                 \
-        if (PyModule_AddObject(module, STRINGIFY(api_id), _api) < 0) {                                                                     \
-            Py_XDECREF(_api);                                                                                                              \
-            return -1;                                                                                                                     \
-        }                                                                                                                                  \
+#define Capsule_CREATE(module, api_id)                                                      \
+    do {                                                                                    \
+        static void *c_api[] = api_id##__EXPORT;                                            \
+        PyObject *_api = PyCapsule_New(&(c_api), STRINGIFY(api_id), NULL);                  \
+        PyCapsule_SetContext(_api, _CTX__getmodule(module));                                \
+        if (PyModule_AddObject(module, STRINGIFY(api_id), _api) < 0) {                      \
+            Py_XDECREF(_api);                                                               \
+            return -1;                                                                      \
+        }                                                                                   \
     } while(0)
 
-#define Capsule_MOUNT(api_id)                                                                                                              \
-    PyObject *CAT(api_id,__module);                                                                                                        \
-    void *CAT(api_id,__ctx);                                                                                                               \
+#define Capsule_MOUNT(api_id)                                                               \
+    PyObject *CAT(api_id,__MODULE);                                                         \
+    void *CAT(api_id,__CTX);
 
-#define Capsule_VISIT(api_id) Py_VISIT(_ctx->CAT(api_id,__module))
-#define Capsule_CLEAR(api_id) Py_CLEAR(_ctx->CAT(api_id,__module))
-#define Capsule_LOAD(module_name, api_id)                                                                                                  \
-    do {                                                                                                                                   \
-        PyObject *_module = PyImport_ImportModule(module_name);                                                                            \
-        void *_api = Capsule_Load(_module, STRINGIFY(api_id));                                                                             \
-        if (!_api) {                                                                                                                       \
-            Py_XDECREF(_module);                                                                                                           \
-            return -1;                                                                                                                     \
-        }                                                                                                                                  \
-        _ctx->CAT(api_id,__module) = _module;                                                                                              \
-        _ctx->CAT(api_id,__ctx) = _CTX__getmodule(_module);                                                                                \
-        if (!CAT(api_id,__api_loaded)) {                                                                                                   \
-            CAT(api_id,__api_loaded) = 1;                                                                                                  \
-            memcpy(CAT(api_id,__api), _api, sizeof(CAT(api_id, __api)));                                                                   \
-        }                                                                                                                                  \
+#define Capsule_VISIT(api_id) Py_VISIT(_ctx->CAT(api_id,__MODULE))
+#define Capsule_CLEAR(api_id) Py_CLEAR(_ctx->CAT(api_id,__MODULE))
+
+#define Capsule_LOAD(module_name, api_id)                                                   \
+    do {                                                                                    \
+        PyObject *_module = PyImport_ImportModule(module_name);                             \
+        void *_api = Capsule_Load(_module, STRINGIFY(api_id));                              \
+        if (!_api) {                                                                        \
+            Py_XDECREF(_module);                                                            \
+            return -1;                                                                      \
+        }                                                                                   \
+        _ctx->CAT(api_id,__MODULE) = _module;                                               \
+        _ctx->CAT(api_id,__CTX) = _CTX__getmodule(_module);                                 \
+        if (!CAT(api_id,__API_LOADED)) {                                                    \
+            CAT(api_id,__API_LOADED) = 1;                                                   \
+            memcpy(CAT(api_id,__API), _api, sizeof(CAT(api_id, __API)));                    \
+        }                                                                                   \
     } while (0)
 
 Py_LOCAL_INLINE(void *)

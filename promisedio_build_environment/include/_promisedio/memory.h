@@ -3,7 +3,7 @@
 #ifndef PROMISEDIO_MEMORY_H
 #define PROMISEDIO_MEMORY_H
 
-#include "base.h"
+#include "_promisedio/base.h"
 
 #ifdef BUILD_DEBUG_MEM
 Py_LOCAL_INLINE(void *)

@@ -79,30 +79,31 @@ def generate_capsule(
 
     print(f". {output}")
     print(f". {export}")
-    with open(output, "wt") as f1:
-        with open(export, "wt") as f2:
-            f1.write(code_header)
-            f1.write(f"#ifndef CAPSULE_{module.upper()}_API\n")
-            f1.write(f"#define CAPSULE_{module.upper()}_API\n\n")
+    with open(output, "wt") as output_file:
+        with open(export, "wt") as export_file:
+            output_file.write(code_header)
+            output_file.write(f"#ifndef CAPSULE_{module.upper()}_API\n")
+            output_file.write(f"#define CAPSULE_{module.upper()}_API\n\n")
             if include:
                 for item in include:
-                    f1.write(f'#include "{item}"\n')
-                f1.write("\n")
-            f2.write(code_header)
+                    output_file.write(f'#include "{item}"\n')
+                output_file.write("\n")
+            export_file.write(code_header)
             for api_key, funcs in functions.items():
                 hash_key = api_key + "_" + hash_keys[api_key]
-                f1.write(f"static int {hash_key}__api_loaded = 0;\n")
-                f1.write(f"static void *{hash_key}__api[{len(funcs)}];\n\n")
-                f1.write(f"#define {api_key.upper()} {hash_key}\n\n")
-                f2.write(f"#define {api_key.upper()} {hash_key}\n\n")
-                f2.write(f"#define {api_key.upper()}_CAPSULE {{\\\n")
+                output_file.write(f"static int {hash_key}__API_LOADED = 0;\n")
+                output_file.write(f"static void *{hash_key}__API[{len(funcs)}];\n\n")
+                output_file.write(f"#define {api_key.upper()} {hash_key}\n\n")
+                export_file.write(f"#define {api_key.upper()} {hash_key}\n\n")
+                export_file.write(f"typedef void * {api_key.upper()}__CAPSULE[{len(funcs)}];\n\n")
+                export_file.write(f"#define {api_key.upper()}__EXPORT {{\\\n")
                 for index, func in enumerate(funcs):
                     ret = func["ret"]
                     name = func["name"]
                     args = list(func["args"])
                     func_id = name.upper() + "_ID"
-                    f1.write(f"#define {func_id} {index}\n")
-                    f2.write(f"  [{index}] = {name},\\\n")
+                    output_file.write(f"#define {func_id} {index}\n")
+                    export_file.write(f"  [{index}] = {name},\\\n")
                     has_state = "_ctx_var" in args
                     if has_state:
                         args.remove("_ctx_var")
@@ -110,26 +111,25 @@ def generate_capsule(
                     if has_state:
                         args.insert(0, "void*")
                     if has_args:
-                        f1.write(f"#define {name}(...) \\\n")
+                        output_file.write(f"#define {name}(...) \\\n")
                     else:
-                        f1.write(f"#define {name}() \\\n")
+                        output_file.write(f"#define {name}() \\\n")
                     varargs = []
                     if has_state:
-                        varargs.append(f"_ctx->{hash_key}__ctx")
+                        varargs.append(f"_ctx->{hash_key}__CTX")
                     if has_args:
                         varargs.append("__VA_ARGS__")
                     args = ", ".join(args)
                     varargs = ", ".join(varargs)
-                    # f1.write(f"  (*({ret} (*) ({args}))(_ctx->{hash_key}__api[{func_id}]))( \\\n")
-                    f1.write(f"  (({ret} (*) ({args}))({hash_key}__api[{func_id}]))( \\\n")
-                    f1.write(f"    {varargs})\n\n")
-                f2.write("}\n\n")
+                    output_file.write(f"  (({ret} (*) ({args}))({hash_key}__API[{func_id}]))( \\\n")
+                    output_file.write(f"    {varargs})\n\n")
+                export_file.write("}\n\n")
 
             if extend:
                 for item in extend:
-                    f1.write(open(os.path.join(path, item), "rt").read() + "\n")
+                    output_file.write(open(os.path.join(path, item), "rt").read() + "\n")
 
-            f1.write("#endif\n")
+            output_file.write("#endif\n")
 
 
 def parse_c_file(data):

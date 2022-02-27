@@ -3,7 +3,7 @@
 #ifndef PROMISEDIO_MODULE_H
 #define PROMISEDIO_MODULE_H
 
-#include "base.h"
+#include "_promisedio/base.h"
 #include "internal/pycore_moduleobject.h"
 
 #define _modulestate a__modulestate

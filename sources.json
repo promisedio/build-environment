@@ -8,13 +8,5 @@
     "version": ["3.10.2"],
     "path": "Tools/clinic/clinic.py",
     "target": "promisedio_build_environment/pyclinic.py"
-  },
-  {
-    "version": ["3.10.0", "3.10.1", "3.10.2"],
-    "path": "Objects/capsule.c",
-    "target": "promisedio_build_environment/include/_promisedio/{version}/capsule.h",
-    "c_names": {
-      "PyCapsule": true
-    }
   }
 ]
