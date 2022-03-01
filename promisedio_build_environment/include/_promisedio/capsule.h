@@ -29,9 +29,9 @@ Capsule_Load(PyObject *module, const char *api_id)
     return return_value;
 }
 
-#define Capsule_CREATE(module, api_id)                                                      \
+#define Capsule_CREATE(module, api_id, export)                                              \
     do {                                                                                    \
-        static void *c_api[] = api_id##__EXPORT;                                            \
+        static void *c_api[] = export;                                                      \
         PyObject *_api = PyCapsule_New(&(c_api), STRINGIFY(api_id), NULL);                  \
         PyCapsule_SetContext(_api, _CTX__getmodule(module));                                \
         if (PyModule_AddObject(module, STRINGIFY(api_id), _api) < 0) {                      \
@@ -57,8 +57,8 @@ Capsule_Load(PyObject *module, const char *api_id)
         }                                                                                   \
         _ctx->CAT(api_id,__MODULE) = _module;                                               \
         _ctx->CAT(api_id,__CTX) = _CTX__getmodule(_module);                                 \
-        if (!CAT(api_id,__API_LOADED)) {                                                    \
-            CAT(api_id,__API_LOADED) = 1;                                                   \
+        if (!CAT(api_id,__LOADED)) {                                                        \
+            CAT(api_id,__LOADED) = 1;                                                       \
             memcpy(CAT(api_id,__API), _api, sizeof(CAT(api_id, __API)));                    \
         }                                                                                   \
     } while (0)
@@ -77,6 +77,6 @@ Capsule_GetFunc(const char *module_name, const char *api_id, int func_id)
 }
 
 #define Capsule_GetFunc(module_name, api_id, func_id) Capsule_GetFunc(module_name, STRINGIFY(api_id), func_id)
-#define CAPSULE_API(api_key, op) static op
+#define CAPSULE_API(op) static op
 
 #endif
