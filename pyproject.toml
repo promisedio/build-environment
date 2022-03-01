@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "promisedio-build-environment"
-version = "1.0.25"
+version = "1.0.26"
 description = "Promisedio build environment"
 authors = ["aachurin <aachurin@gmail.com>"]
 license = "MIT License"
@@ -17,5 +17,5 @@ clinic = "promisedio_build_environment.clinic:main"
 memcheck = "promisedio_build_environment.memcheck:main"
 
 [build-system]
-requires = ["poetry-core>=1.0.0"]
+requires = ["poetry-core>=1.0.0", "setuptools"]
 build-backend = "poetry.core.masonry.api"
