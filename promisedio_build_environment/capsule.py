@@ -189,7 +189,6 @@ def main(params=None):
 
 
 def generate_capsule(module, module_path, dirname):
-    print(f"{module_path}:")
     with open(module_path, "rt") as f:
         module_source = f.read()
     instructions, errors = parse_c_file(module_source)
@@ -198,6 +197,9 @@ def generate_capsule(module, module_path, dirname):
             extra = f": {extra}" if extra else ""
             print(f"  Line {line}: {msg}{extra}")
         return
+    if not instructions:
+        return
+    print(f"{module_path}:")
     name = [instr for instr in instructions if instr.name == "name"]
     if name:
         module_name = name[0].arg.upper()
@@ -320,6 +322,9 @@ def parse_c_file(source):
                 e.args[1]
             ))
             continue
+
+    if not instructions or errors:
+        return None, errors
 
     instructions.sort(key=lambda x: x.start)
     for index, instr in enumerate(instructions):
