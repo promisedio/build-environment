@@ -10,14 +10,14 @@ Py_LOCAL_INLINE(void *)
 Py_Malloc(size_t n)
 {
     void *ptr = PyMem_Malloc(n);
-    MEMLOG("MALLOC", ptr, "RAW");
+    MEMLOG("Malloc", ptr, "RAW");
     return ptr;
 }
 
 Py_LOCAL_INLINE(void)
 Py_Free(void *op)
 {
-    MEMLOG("FREE", op, "RAW");
+    MEMLOG("Free", op, "RAW");
     PyMem_Free(op);
 }
 
@@ -25,7 +25,7 @@ Py_LOCAL_INLINE(PyObject *)
 Py_New(PyTypeObject *tp)
 {
     PyObject *ptr = _PyObject_New(tp);
-    MEMLOG("MALLOC", ptr, Py_TYPE(ptr)->tp_name);
+    MEMLOG("New", ptr, Py_TYPE(ptr)->tp_name);
     return ptr;
 }
 
@@ -33,7 +33,7 @@ Py_LOCAL_INLINE(PyObject *)
 Py_GC_New(PyTypeObject *tp)
 {
     PyObject *ptr = _PyObject_GC_New(tp);
-    MEMLOG("MALLOC", ptr, Py_TYPE(ptr)->tp_name);
+    MEMLOG("New", ptr, Py_TYPE(ptr)->tp_name);
     return ptr;
 }
 
@@ -48,7 +48,7 @@ Py_LOCAL_INLINE(void)
 Py_Delete(void *op)
 {
     // For heap types only
-    MEMLOG("FREE", op, Py_TYPE(op)->tp_name);
+    MEMLOG("Delete", op, Py_TYPE(op)->tp_name);
     PyTypeObject *tp = Py_TYPE(op);
     PyMem_Free(op);
     Py_DECREF(tp);
@@ -58,7 +58,7 @@ Py_LOCAL_INLINE(void)
 Py_GC_Delete(void *op)
 {
     // For heap types only
-    MEMLOG("FREE", op, Py_TYPE(op)->tp_name);
+    MEMLOG("Delete", op, Py_TYPE(op)->tp_name);
     PyTypeObject *tp = Py_TYPE(op);
     PyObject_GC_Del(op);
     Py_DECREF(tp);
@@ -69,7 +69,7 @@ Py_GC_Delete(void *op)
 #define PyTrack_DECREF(op)                                  \
 do {                                                        \
     PyObject *_tmp = _PyObject_CAST(op);                    \
-    MEMLOG("DECREF", _tmp, Py_TYPE(_tmp)->tp_name);         \
+    MEMLOG("Decref", _tmp, Py_TYPE(_tmp)->tp_name);      \
     Py_DECREF(_tmp);                                        \
 } while (0)
 
@@ -84,7 +84,7 @@ do {                                                        \
 #define PyTrack_INCREF(op)                                  \
 do {                                                        \
     PyObject *_tmp = _PyObject_CAST(op);                    \
-    MEMLOG("INCREF", _tmp, Py_TYPE(_tmp)->tp_name);         \
+    MEMLOG("Incref", _tmp, Py_TYPE(_tmp)->tp_name);      \
     Py_INCREF(_tmp);                                        \
 } while (0)
 
@@ -119,36 +119,22 @@ do {                                                        \
     PyTrack_XDECREF(_tmp2);                                 \
 } while (0)
 
-#define PyTrack_MarkAllocated(op)                           \
+#define PyTrack_Enter(op)                                   \
 do {                                                        \
     PyObject *_tmp = _PyObject_CAST(op);                    \
-    if (_tmp) {                                             \
-        MEMLOG("ALLOC", _tmp, Py_TYPE(_tmp)->tp_name);      \
-    }                                                       \
+    MEMLOG("Enter", _tmp, Py_TYPE(_tmp)->tp_name);          \
 } while (0)
 
-#define PyTrack_MarkDeleted(op)                             \
+#define PyTrack_Resize(op)                                  \
 do {                                                        \
     PyObject *_tmp = _PyObject_CAST(op);                    \
-    MEMLOG("DELETE", _tmp, Py_TYPE(_tmp)->tp_name);         \
+    MEMLOG("Resize", _tmp, Py_TYPE(_tmp)->tp_name);         \
 } while (0)
 
-#define PyTrack_MarkEnter(op)                               \
+#define PyTrack_Resized(op)                                 \
 do {                                                        \
     PyObject *_tmp = _PyObject_CAST(op);                    \
-    MEMLOG("ENTER", _tmp, Py_TYPE(_tmp)->tp_name);          \
-} while (0)
-
-#define PyTrack_MarkBeginResize(op)                         \
-do {                                                        \
-    PyObject *_tmp = _PyObject_CAST(op);                    \
-    MEMLOG("RESIZE", _tmp, Py_TYPE(_tmp)->tp_name);         \
-} while (0)
-
-#define PyTrack_MarkEndResize(op)                           \
-do {                                                        \
-    PyObject *_tmp = _PyObject_CAST(op);                    \
-    MEMLOG("RESIZD", _tmp,  Py_TYPE(_tmp)->tp_name);        \
+    MEMLOG("Resized", _tmp,  Py_TYPE(_tmp)->tp_name);       \
 } while (0)
 
 #else
@@ -160,11 +146,9 @@ do {                                                        \
 #define PyTrack_CLEAR(op) Py_CLEAR(op)
 #define PyTrack_SETREF(op, op2) Py_SETREF(op, op2)
 #define PyTrack_XSETREF(op, op2) Py_XSETREF(op, op2)
-#define PyTrack_MarkAllocated(op)
-#define PyTrack_MarkDeleted(op)
-#define PyTrack_MarkEnter(op)
-#define PyTrack_MarkBeginResize(op)
-#define PyTrack_MarkEndResize(op)
+#define PyTrack_Enter(op)
+#define PyTrack_Resize(op)
+#define PyTrack_Resized(op)
 #endif
 
 #ifndef BUILD_DISABLE_FREELISTS
@@ -229,19 +213,19 @@ _ctx->name##__gc_freelist =             \
 Py_LOCAL_INLINE(void)
 Freelist_Mem_Clear(freelist_mem_head *fl)
 {
-    Freelist_CLEAR(fl, Py_Free)
+    Freelist_CLEAR(fl, PyMem_Free)
 }
 
 Py_LOCAL_INLINE(void)
 Freelist_Obj_Clear(freelist_obj_head *fl)
 {
-    Freelist_CLEAR(fl, Py_Delete)
+    Freelist_CLEAR(fl, PyMem_Free)
 }
 
 Py_LOCAL_INLINE(void)
 Freelist_GC_Clear(freelist_gc_head *fl)
 {
-    Freelist_CLEAR(fl, Py_GC_Delete)
+    Freelist_CLEAR(fl, PyObject_GC_Del)
 }
 
 #define Freelist_Mem_Clear(name) Freelist_Mem_Clear(&(_ctx->name##__mem_freelist))
@@ -273,6 +257,8 @@ Freelist_Malloc(freelist_mem_head *fl)
     void *ptr = freelist__pop(fl);
     if (!ptr) {
         ptr = Py_Malloc(fl->obj_size);
+    } else {
+        MEMLOG("Malloc", ptr, "RAW");
     }
     return ptr;
 }
@@ -285,6 +271,7 @@ Freelist_Free(freelist_mem_head *fl, void *ptr)
     if (fl->size >= fl->limit) {
         Py_Free(ptr);
     } else {
+        MEMLOG("Free", ptr, "RAW");
         freelist__push(fl, ptr);
     }
 }
@@ -297,6 +284,7 @@ Freelist_New(freelist_obj_head *fl, PyTypeObject *tp)
     void *ptr = freelist__pop((freelist_mem_head *) fl);
     if (ptr) {
         PyObject_Init(ptr, tp);
+        MEMLOG("New", ptr, Py_TYPE(ptr)->tp_name);
     } else {
         ptr = Py_New(tp);
     }
@@ -311,6 +299,7 @@ Freelist_Delete(freelist_obj_head *fl, PyObject *obj)
     if (fl->size >= fl->limit) {
         Py_Delete(obj);
     } else {
+        MEMLOG("Delete", obj, Py_TYPE(obj)->tp_name);
         freelist__push((freelist_mem_head *) fl, obj);
         Py_DECREF(Py_TYPE(obj));
     }
@@ -324,6 +313,7 @@ Freelist_GC_New(freelist_gc_head *fl, PyTypeObject *tp)
     void *ptr = freelist__pop((freelist_mem_head *) fl);
     if (ptr) {
         PyObject_Init(ptr, tp);
+        MEMLOG("New", ptr, Py_TYPE(ptr)->tp_name);
     } else {
         ptr = Py_GC_New(tp);
     }
@@ -338,6 +328,7 @@ Freelist_GC_Delete(freelist_gc_head *fl, PyObject *obj)
     if (fl->size >= fl->limit) {
         Py_GC_Delete(obj);
     } else {
+        MEMLOG("Delete", obj, Py_TYPE(obj)->tp_name);
         freelist__push((freelist_mem_head *) fl, obj);
         Py_DECREF(Py_TYPE(obj));
     }

@@ -12,19 +12,24 @@ class Ref:
 
 
 def main():
-    refs = {}
-    allocs = []
+    mallocs = []
+    objects = {}
+    types = {}
 
-    def print_refs():
-        for addr, ref in refs.items():
+    def print_objects():
+        for addr, ref in objects.items():
             print(f"{addr}\t{ref}")
 
-    def print_allocs():
-        for addr in allocs:
-            if addr in refs:
-                print(f"{addr}\t{refs[addr]}")
+    def print_mallocs():
+        for addr in mallocs:
+            if addr in objects:
+                print(f"{addr}\t{objects[addr]}")
             else:
                 print(f"{addr}\tRAW")
+
+    def print_types():
+        for tp in types:
+            print(f"{tp} new:{types[tp]['new']} del:{types[tp]['del']}")
 
     def print_header(title):
         length = 40
@@ -37,20 +42,24 @@ def main():
         print("=" * left_pad, title, "=" * right_pad)
 
     def print_stats():
-        print_header("Refs")
-        print_refs()
-        print_header("Allocs")
-        print_allocs()
+        print_header("Mallocs")
+        print_mallocs()
+        print_header("Objects")
+        print_objects()
+        print_header("Types")
+        print_types()
 
     def print_leaks():
-        if refs:
-            print_header("Leaks report (Refs)")
-            print_refs()
-        if allocs:
-            print_header("Leaks report (Allocs)")
-            print_allocs()
-        if not (refs or allocs):
+        if objects:
+            print_header("Leaks report (Objects)")
+            print_objects()
+        if mallocs:
+            print_header("Leaks report (Mallocs)")
+            print_mallocs()
+        if not (objects and mallocs):
             print_header("Great! No leaks")
+        if types:
+            print_types()
 
     for line in sys.stdin:
         line = line.strip()
@@ -62,55 +71,57 @@ def main():
             continue
         if not line.startswith("#"):
             continue
-        match = re.match(r"#(\w+)\s+\((.*)\)", line.split("--", 1)[0].strip())
+        match = re.match(r"#(\w+)\s*\((.*)\)", line.split("--", 1)[0].strip())
         if not match:
             continue
         action, args = match.groups()
         args = [x.strip() for x in args.split(",")]
-        if action == "MALLOC":
-            allocs.append(args[0])
-        elif action == "FREE":
-            if args[0] not in allocs:
+        if action == "Malloc":
+            mallocs.append(args[0])
+        elif action == "Free":
+            if args[0] not in mallocs:
                 print_header("Missing memory")
                 print(action)
-                print(args[0])
-                print(allocs)
+                print(args)
+                print(mallocs)
                 print_header("")
             else:
-                allocs.remove(args[0])
-        elif action == "ALLOC":
-            if args[0] in refs:
+                mallocs.remove(args[0])
+        elif action == "New":
+            if args[0] in objects:
                 print_header("Already allocated")
                 print(action)
-                print(args[0])
-                print(refs)
+                print(args)
+                print(objects)
                 print_header("")
             else:
-                refs[args[0]] = Ref(args[1])
-        elif action == "DELETE":
-            if args[0] not in refs:
+                objects[args[0]] = Ref(args[1])
+            types.setdefault(args[1], {"new": 0, "del": 0})["new"] += 1
+        elif action == "Delete":
+            if args[0] not in objects:
                 print_header("Missing object")
                 print(action)
-                print(args[0])
-                print(refs)
+                print(args)
+                print(objects)
                 print_header("")
             else:
-                del refs[args[0]]
-        elif action in ("INCREF", "ENTER", "RESIZD"):
-            if args[0] in refs:
-                refs[args[0]].refcnt += 1
+                del objects[args[0]]
+            types.setdefault(args[1], {"new": 0, "del": 0})["del"] += 1
+        elif action in ("Incref", "Enter", "Resized"):
+            if args[0] in objects:
+                objects[args[0]].refcnt += 1
             else:
-                refs[args[0]] = Ref(args[1])
-        elif action in ("DECREF", "RESIZE"):
-            if args[0] in refs:
-                refs[args[0]].refcnt -= 1
-                if refs[args[0]].refcnt == 0:
-                    del refs[args[0]]
+                objects[args[0]] = Ref(args[1])
+        elif action in ("Decref", "Resize"):
+            if args[0] in objects:
+                objects[args[0]].refcnt -= 1
+                if objects[args[0]].refcnt == 0:
+                    del objects[args[0]]
             else:
                 print_header("Missing object")
                 print(action)
-                print(args[0])
-                print(refs)
+                print(args)
+                print(objects)
                 print_header("")
 
     print_leaks()

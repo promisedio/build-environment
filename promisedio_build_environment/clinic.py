@@ -99,20 +99,21 @@ def generate_readme():
             return f"[{name}](#{name.lower()})"
         return f"`{name}`"
 
-    def generate_function(name, f):
+    def generate_descr(name, f):
         args = [get_parameter_annotation(p) for p in list(f.parameters.values())[1:]]
         returns = get_return_annotation(f)
-        output.append(f"#### {name}")
-        # output.append(f"##### Signature")
         output.append("```python")
         output.append(f"{name}({', '.join(args)}) -> {returns}")
         output.append("```")
         _, doc = f.docstring.split("--", 1)
         doc = doc.strip()
         doc = re.sub(r"`([^`]*)`", replacer, doc)
-        # output.append(f"##### Description")
         output.append(doc)
         output.append("")
+
+    def generate_function(name, f):
+        output.append(f"#### {name}")
+        generate_descr(name, f)
 
     for module in sorted(readme_contents):
         classes = readme_contents[module]["classes"]
@@ -123,6 +124,9 @@ def generate_readme():
         for cls in sorted(classes):
             output.append(f"### {cls}")
             functions = classes[cls]
+            new_func = functions.pop("__new__", None)
+            if new_func:
+                generate_descr(f"{cls}", new_func)
             for function in sorted(functions):
                 generate_function(f"{cls}.{function}", functions[function])
         output.append("")
@@ -137,9 +141,9 @@ def generate_readme():
                 f"\n<!--- end:[{module}] -->"
             )
 
-        doc = re.sub(pattern, repl, template, 1)
-        if doc != template:
-            open("README.md", "wt").write(doc)
+        result = re.sub(pattern, repl, template, 1)
+        if result != template:
+            open("README.md", "wt").write(result)
 
 
 def rebuild_func(fn, consts):

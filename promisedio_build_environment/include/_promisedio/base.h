@@ -25,7 +25,7 @@ if (cond) {                                                                 \
 
 #ifdef BUILD_DEBUG_MEM
 #define MEMLOG(action, ptr, type)                                           \
-    PySys_FormatStderr("#%s\t(%p, %s)", action, ptr, type),                 \
+    PySys_FormatStderr("#%s(%p, %s)", action, ptr, type),                   \
     PySys_FormatStderr(" -- %s:%d, %s", __FILENAME__, __LINE__, __func__),  \
     PySys_WriteStderr("\n")
 #else
