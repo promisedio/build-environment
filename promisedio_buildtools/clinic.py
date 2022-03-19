@@ -2,7 +2,7 @@ import re
 import sys
 from . import cpp
 
-sys.modules["cpp"] = sys.modules["promisedio_build_environment.cpp"]
+sys.modules["cpp"] = sys.modules["promisedio_buildtools.cpp"]
 
 from . pyclinic import *
 from . pyclinic import main as clinic_main
