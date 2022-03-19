@@ -1,20 +1,25 @@
 [tool.poetry]
-name = "promisedio-build-environment"
-version = "1.0.28"
-description = "Promisedio build environment"
+name = "promisedio-buildtools"
+version = "1.0.29"
+description = "Promisedio build tools"
 authors = ["aachurin <aachurin@gmail.com>"]
 license = "MIT License"
-repository = "https://github.com/promisedio/build-environment"
+repository = "https://github.com/promisedio/buildtools"
+classifiers = [
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "License :: OSI Approved :: MIT License",
+]
 
 [tool.poetry.dependencies]
 python = "^3.10"
 requests = "^2.27.1"
 
 [tool.poetry.scripts]
-download_sources = "promisedio_build_environment.download_sources:main"
-capsule = "promisedio_build_environment.capsule:main"
-clinic = "promisedio_build_environment.clinic:main"
-memcheck = "promisedio_build_environment.memcheck:main"
+download_sources = "promisedio_buildtools.download_sources:main"
+capsule = "promisedio_buildtools.capsule:main"
+clinic = "promisedio_buildtools.clinic:main"
+memcheck = "promisedio_buildtools.memcheck:main"
 
 [build-system]
 requires = ["poetry-core>=1.0.0", "setuptools"]

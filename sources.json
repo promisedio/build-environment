@@ -2,11 +2,11 @@
   {
     "version": ["3.10.2"],
     "path": "Tools/clinic/cpp.py",
-    "target": "promisedio_build_environment/cpp.py"
+    "target": "promisedio_buildtools/cpp.py"
   },
   {
     "version": ["3.10.2"],
     "path": "Tools/clinic/clinic.py",
-    "target": "promisedio_build_environment/pyclinic.py"
+    "target": "promisedio_buildtools/pyclinic.py"
   }
 ]
